@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园二手集市 - 让闲置流动起来</title>
+    <style>
+        /* --- CSS 样式部分 --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9f9f9; color: #333; line-height: 1.6; }
+        
+        /* 顶部导航 */
+        header { background-color: #ff6b6b; color: white; padding: 1rem 0; } /* 改用暖色调，更有购物感 */
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+        .nav-flex { display: flex; justify-content: space-between; align-items: center; }
+
+        .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 10px; 
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .btn { padding: 10px 20px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; text-decoration: none; display: inline-block; }
+        .btn-primary {background-color: #fff; color: #ff6b6b; }
+        .btn-primary:hover { background-color: #f1f1f1; }
+
+        /* 搜索区 */
+        .search-section { background-color: white; padding: 2rem 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 2rem; }
+        .search-box { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .search-input, .filter-select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .search-input { width: 300px; }
+
+        /* 商品网格 */
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; padding-bottom: 3rem; }
+        
+        /* 商品卡片 */
+        .card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative; }
+        .card:hover { transform: translateY(-5px); }
+        .card-img { width: 100%; height: 220px; background-color: #eee; object-fit: cover; }
+        
+        /* 已售出遮罩 */
+        .sold-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.6); display: flex; justify-content: center; align-items: center;
+            z-index: 10; pointer-events: none;
+        }
+        .sold-badge { font-size: 2rem; font-weight: bold; color: #333; border: 3px solid #333; padding: 5px 15px; transform: rotate(-15deg); background: white; }
+
+        .card-body { padding: 20px; }
+        .price { color: #ff6b6b; font-size: 1.4rem; font-weight: bold; margin-bottom: 5px; display: block; }
+        .card-title { font-size: 1.1rem; margin-bottom: 10px; font-weight: bold; height: 1.4em; overflow: hidden; }
+        .card-info { font-size: 0.85rem; color: #888; margin-bottom: 5px; display: flex; align-items: center; }
+        .tag { display: inline-block; padding: 3px 8px; background: #eee; border-radius: 4px; font-size: 0.75rem; margin-right: 5px; }
+        
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; }
+        .contact-btn { color: #ff6b6b; font-weight: bold; font-size: 0.9rem; }
+
+        footer { text-align: center; padding: 2rem; background-color: #333; color: #999; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <header>
+        <div class="container nav-flex">
+            <div class="logo">🏫 校园二手集市</div>
+            <div>            
+                <a href="publish.html" class="btn btn-primary">+ 发布闲置</a>
+                <a href="../index.html" class="btn btn-primary">← 返回主页</a>
+            </div>
+            <div id="nav-buttons"></div>
+        </div>
+    </header>
+
+    <!-- 搜索区 -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索书籍、数码、宿舍神器...">
+                <select id="typeFilter" class="filter-select">
+                    <option value="all">全部分类</option>
+                    <option value="书籍教材">书籍教材</option>
+                    <option value="数码电子">数码电子</option>
+                    <option value="生活杂物">生活杂物</option>
+                    <option value="交通工具">交通工具</option>
+                </select>
+                <button class="btn btn-primary" onclick="filterItems()" style="background:#ff6b6b; color:white;">搜索</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 商品列表 -->
+    <main class="container">
+        <div id="itemList" class="item-grid">
+            <!-- JS 动态生成 -->
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 校园二手集市。 Designed for Campus.</p>
+    </footer>
+     <script src="../auth.js"></script>
+    <!-- 逻辑脚本 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // ⚠️ 请在此处填入你的 Firebase 配置信息
+        const firebaseConfig = {
+            apiKey: "你的API_KEY",
+            authDomain: "你的项目.firebaseapp.com",
+            databaseURL: "你的项目-default-rtdb.firebaseio.com",
+            projectId: "你的项目ID",
+            storageBucket: "你的项目.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const itemListElement = document.getElementById('itemList');
+        let allItems = [];
+
+        // 读取数据
+        const itemsRef = ref(db, 'items');
+        onValue(itemsRef, (snapshot) => {
+            const data = snapshot.val();
+            allItems = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    allItems.push({ id: key, ...data[key] });
+                });
+            }
+            // 按时间倒序
+            allItems.sort((a, b) => b.timestamp - a.timestamp);
+            renderItems(allItems);
+        });
+
+        // 渲染函数
+        function renderItems(data) {
+            itemListElement.innerHTML = '';
+            if (!data || data.length === 0) {
+                itemListElement.innerHTML = '<p style="text-align:center; width:100%; color:#999;">暂无商品，快来发布第一个闲置吧！</p>';
+                return;
+            }
+
+            data.forEach(item => {
+                const isSold = item.status === 'sold';
+                const priceHtml = isSold ? '<span class="price" style="color:#999; text-decoration:line-through; font-size:1rem;">¥' + item.price + '</span> <span style="color:red; font-weight:bold;">已售出</span>' : '<span class="price">¥' + item.price + '</span>';
+                
+                const cardHTML = `
+                    <div class="card">
+                        ${isSold ? '<div class="sold-overlay"><div class="sold-badge">已售出</div></div>' : ''}
+                        <img src="${item.image || 'https://via.placeholder.com/300?text=No+Image'}" alt="${item.title}" class="card-img">
+                        <div class="card-body">
+                            ${priceHtml}
+                            <h3 class="card-title">${item.title}</h3>
+                            <div class="card-info">📍 ${item.location || '校内'}</div>
+                            <div class="card-info"><span class="tag">${item.category || '其他'}</span> ${item.date}</div>
+                            <p class="card-desc" style="margin-top:10px; font-size:0.9rem; color:#555;">${item.desc}</p>
+                            <div class="card-footer">
+                                <span>卖家：${item.contactName || '同学'}</span>
+                                <a href="tel:${item.contact}" class="contact-btn">联系卖家 📞</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                itemListElement.innerHTML += cardHTML;
+            });
+        }
+
+        // 搜索逻辑
+        window.filterItems = function() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('typeFilter').value;
+
+            const filteredData = allItems.filter(item => {
+                const matchesKeyword = item.title.toLowerCase().includes(keyword) || item.desc.toLowerCase().includes(keyword);
+                const matchesCategory = category === 'all' || item.category === category;
+                return matchesKeyword && matchesCategory;
+            });
+            renderItems(filteredData);
+        }
+    </script>
+</body>
+</html>

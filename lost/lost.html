@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园失物招领 - 让爱回家</title>
+    <style>
+        /* --- CSS 样式部分 --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        
+        /* 顶部导航 - 蓝色渐变 */
+        header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 1rem 0; box-shadow: 0 2px 10px rgba(79, 172, 254, 0.3); }
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+         .nav-flex { display: flex; justify-content: space-between; align-items: center; }
+
+        .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 10px; 
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; }
+        .btn { padding: 10px 20px; border-radius: 20px; cursor: pointer; border: none; font-weight: bold; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .btn-primary { background-color: #fff; color: #4facfe; }
+        .btn-primary:hover { background-color: #f0f0f0; transform: scale(1.05); }
+
+        /* 搜索区 */
+        .search-section { background-color: white; padding: 2rem 0; margin-bottom: 2rem; border-radius: 0 0 20px 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .search-box { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .search-input, .filter-select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        .search-input { width: 300px; }
+        .search-btn { background: #4facfe; color: white; padding: 12px 25px; border-radius: 8px; border: none; cursor: pointer; }
+
+        /* 物品列表 */
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; padding-bottom: 3rem; }
+        
+        /* 物品卡片 */
+        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; border-top: 5px solid #ddd; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        /* 状态标签 */
+        .status-lost { border-top-color: #ff6b6b; } /* 遗失 - 红色 */
+        .status-found { border-top-color: #1dd1a1; } /* 招领 - 绿色 */
+        
+        .card-img { width: 100%; height: 200px; object-fit: cover; background-color: #eee; }
+        .card-body { padding: 20px; }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .tag { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: white; }
+        .tag-lost { background-color: #ff6b6b; }
+        .tag-found { background-color: #1dd1a1; }
+        .card-date { font-size: 0.85rem; color: #999; }
+        
+        .card-title { font-size: 1.2rem; margin-bottom: 10px; color: #2c3e50; }
+        .card-info { font-size: 0.9rem; color: #555; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .card-desc { margin-top: 15px; color: #666; font-size: 0.95rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .card-footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-contact { color: #4facfe; font-weight: bold; text-decoration: none; }
+
+        footer { text-align: center; padding: 2rem; color: #999; font-size: 0.9rem; }
+        
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <header>
+        <div class="container nav-flex">
+            <div class="logo">💙 校园失物招领</div>
+            <div>            
+                <a href="publish.html" class="btn btn-primary">+ 发布信息</a>
+                <a href="../index.html" class="btn btn-primary">← 返回主页</a>
+            </div>
+            <div id="nav-buttons"></div>
+        </div>
+    </header>
+
+    <!-- 搜索区 -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索物品（如：校园卡、钥匙...）">
+                <select id="typeFilter" class="filter-select">
+                    <option value="all">全部类型</option>
+                    <option value="lost">遗失启事</option>
+                    <option value="found">失物招领</option>
+                </select>
+                <button class="search-btn" onclick="filterItems()">搜索</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 物品列表 -->
+    <main class="container">
+        <div id="itemList" class="item-grid">
+            <!-- JS 动态生成 -->
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 校园失物招领。 Hope you find it.</p>
+    </footer>
+    <script src="../auth.js"></script>
+    <!-- 逻辑脚本 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // ⚠️ 请在此处填入你的 Firebase 配置信息
+        const firebaseConfig = {
+            apiKey: "你的API_KEY",
+            authDomain: "你的项目.firebaseapp.com",
+            databaseURL: "你的项目-default-rtdb.firebaseio.com",
+            projectId: "你的项目ID",
+            storageBucket: "你的项目.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const itemListElement = document.getElementById('itemList');
+        let allItems = [];
+
+        // 读取数据
+        const itemsRef = ref(db, 'items');
+        onValue(itemsRef, (snapshot) => {
+            const data = snapshot.val();
+            allItems = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    allItems.push({ id: key, ...data[key] });
+                });
+            }
+            // 按时间倒序
+            allItems.sort((a, b) => b.timestamp - a.timestamp);
+            renderItems(allItems);
+        });
+
+        // 渲染函数
+        function renderItems(data) {
+            itemListElement.innerHTML = '';
+            if (!data || data.length === 0) {
+                itemListElement.innerHTML = '<p style="text-align:center; width:100%; color:#999;">暂无信息，快来发布第一条吧！</p>';
+                return;
+            }
+
+            data.forEach(item => {
+                const isLost = item.type === 'lost';
+                const statusClass = isLost ? 'status-lost' : 'status-found';
+                const tagClass = isLost ? 'tag-lost' : 'tag-found';
+                const typeText = isLost ? '遗失启事' : '失物招领';
+                const imgUrl = item.image || 'https://via.placeholder.com/400x300?text=No+Image';
+
+                const cardHTML = `
+                    <div class="card ${statusClass}">
+                        <img src="${imgUrl}" alt="${item.title}" class="card-img">
+                        <div class="card-body">
+                            <div class="card-header">
+                                <span class="tag ${tagClass}">${typeText}</span>
+                                <span class="card-date">${item.date}</span>
+                            </div>
+                            <h3 class="card-title">${item.title}</h3>
+                            <div class="card-info">📍 ${item.location}</div>
+                            <p class="card-desc">${item.desc}</p>
+                            <div class="card-footer">
+                                <span style="color:#999; font-size:0.85rem;">联系人：${item.contactName || '同学'}</span>
+                                <a href="tel:${item.contact}" class="btn-contact">联系 TA →</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                itemListElement.innerHTML += cardHTML;
+            });
+        }
+
+        // 搜索逻辑
+        window.filterItems = function() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const type = document.getElementById('typeFilter').value;
+
+            const filteredData = allItems.filter(item => {
+                const matchesKeyword = item.title.toLowerCase().includes(keyword) || item.desc.toLowerCase().includes(keyword) || (item.location && item.location.toLowerCase().includes(keyword));
+                const matchesType = type === 'all' || item.type === type;
+                return matchesKeyword && matchesType;
+            });
+            renderItems(filteredData);
+        }
+    </script>
+    <!-- 预设案例：防止页面空白 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const itemListElement = document.getElementById('itemList');
+    
+    // 模拟预设数据（4个案例：2失物 + 2招领）
+    const mockItems = [
+        {
+            id: "mock1",
+            title: "黑色 小米校园卡",
+            type: "lost",
+            location: "一教 203 教室",
+            date: "今天 08:00",
+            desc: "早八课下课后发现丢失。卡套是皮质的，里面有少量现金。拾到者请联系我，必有重谢！",
+            contactName: "刘同学",
+            contact: "13900139001",
+            image: "https://via.placeholder.com/300x200?text=Campus+Card",
+            timestamp: Date.now()
+        },
+        {
+            id: "mock2",
+            title: "深蓝色 帆布双肩包",
+            type: "found",
+            location: "图书馆 三楼自习区",
+            date: "昨天 21:30",
+            desc: "在靠窗座位发现一个深蓝色双肩包，里面有几本专业书和一个保温杯。失主请联系图书馆值班室。",
+            contactName: "图书馆值班室",
+            contact: "0795-1234567",
+            image: "https://via.placeholder.com/300x200?text=Backpack",
+            timestamp: Date.now() - 3600000
+        },
+        {
+            id: "mock3",
+            title: "银色 苹果 AirPods 3代",
+            type: "lost",
+            location: "体育馆 羽毛球馆",
+            date: "昨天 19:00",
+            desc: "晚上打球时遗落的。充电盒上有贴纸。非常着急，捡到的同学请联系我，当面酬谢！",
+            contactName: "陈同学",
+            contact: "13900139002",
+            image: "https://via.placeholder.com/300x200?text=AirPods",
+            timestamp: Date.now() - 7200000
+        },
+        {
+            id: "mock4",
+            title: "粉色 折叠伞",
+            type: "found",
+            location: "食堂 二楼",
+            date: "今天 12:15",
+            desc: "午饭时间在205号桌捡到一把粉色折叠伞，伞柄是Hello Kitty图案。失主可凭口令认领。",
+            contactName: "食堂阿姨",
+            contact: "13900139003",
+            image: "https://via.placeholder.com/300x200?text=Umbrella",
+            timestamp: Date.now() - 1800000
+        }
+    ];
+
+    setTimeout(() => {
+        if (itemListElement.innerHTML.trim() === '') {
+            renderItems(mockItems);
+        }
+    }, 1000);
+
+    function renderItems(data) {
+        itemListElement.innerHTML = '';
+        data.forEach(item => {
+            const isLost = item.type === 'lost';
+            const statusClass = isLost ? 'status-lost' : 'status-found';
+            const tagClass = isLost ? 'tag-lost' : 'tag-found';
+            const typeText = isLost ? '遗失启事' : '失物招领';
+            const imgUrl = item.image || 'https://via.placeholder.com/400x300?text=No+Image';
+
+            const cardHTML = `
+                <div class="card ${statusClass}">
+                    <img src="${imgUrl}" alt="${item.title}" class="card-img">
+                    <div class="card-body">
+                        <div class="card-header">
+                            <span class="tag ${tagClass}">${typeText}</span>
+                            <span class="card-date">${item.date}</span>
+                        </div>
+                        <h3 class="card-title">${item.title}</h3>
+                        <div class="card-info">📍 ${item.location}</div>
+                        <p class="card-desc">${item.desc}</p>
+                        <div class="card-footer">
+                            <span style="color:#999; font-size:0.85rem;">联系人：${item.contactName}</span>
+                            <a href="tel:${item.contact}" class="btn-contact">联系 TA →</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            itemListElement.innerHTML += cardHTML;
+        });
+    }
+});
+</script>
+</body>
+</html>

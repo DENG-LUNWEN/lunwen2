@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园活动通 - 发现精彩校园生活</title>
+    <style>
+        /* --- CSS 样式部分 --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        
+        /* 顶部导航 - 活力紫配色 */
+        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 0; box-shadow: 0 2px 10px rgba(118, 75, 162, 0.3); }
+        .container { width: 90%; max-width: 1000px; margin: 0 auto; }
+         .nav-flex { display: flex; justify-content: space-between; align-items: center; }
+
+        .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 10px; 
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; }
+        .btn { padding: 10px 20px; border-radius: 20px; cursor: pointer; border: none; font-weight: bold; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .btn-primary { background-color: #fff; color: #764ba2; }
+        .btn-primary:hover { background-color: #f0f0f0; transform: scale(1.05); }
+
+        /* 搜索区 */
+        .search-section { background-color: white; padding: 2rem 0; margin-bottom: 2rem; border-radius: 0 0 20px 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .search-box { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .search-input, .filter-select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        .search-input { width: 300px; }
+        .search-btn { background: #764ba2; color: white; padding: 12px 25px; border-radius: 8px; border: none; cursor: pointer; }
+
+        /* 活动列表 - 时间轴风格 */
+        .event-list { padding-bottom: 3rem; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* 活动卡片 */
+        .event-card { background: white; border-radius: 15px; display: flex; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; border-left: 5px solid #764ba2; }
+        .event-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        
+        /* 左侧日期块 */
+        .date-box { background-color: #f8f9fa; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 100px; border-right: 1px solid #eee; text-align: center; }
+        .date-month { font-size: 1rem; color: #764ba2; font-weight: bold; text-transform: uppercase; }
+        .date-day { font-size: 2.5rem; color: #333; font-weight: bold; line-height: 1; margin: 5px 0; }
+        .date-time { font-size: 0.85rem; color: #666; margin-top: 5px; }
+
+        /* 右侧内容 */
+        .card-body { padding: 25px; flex: 1; display: flex; flex-direction: column; }
+        .tag { display: inline-block; padding: 4px 10px; background: #e0e7ff; color: #764ba2; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-bottom: 10px; width: fit-content; }
+        .card-title { font-size: 1.4rem; margin-bottom: 10px; color: #2c3e50; }
+        .card-info { font-size: 0.9rem; color: #555; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .card-desc { margin-top: 15px; color: #666; font-size: 0.95rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .card-footer { margin-top: auto; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-contact { background-color: #764ba2; color: white; padding: 8px 20px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; }
+        .btn-contact:hover { background-color: #5a387e; }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .event-card { flex-direction: column; }
+            .date-box { flex-direction: row; gap: 15px; padding: 15px; justify-content: flex-start; }
+            .date-day { font-size: 2rem; margin: 0; }
+        }
+        
+        footer { text-align: center; padding: 2rem; color: #999; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <header>
+        <div class="container nav-flex">
+            <div class="logo">🚀 校园活动通</div>
+            <div>            
+                <a href="publish.html" class="btn btn-primary">+ 发布活动</a>
+                <a href="../index.html" class="btn btn-primary">← 返回主页</a>
+            </div>
+            <div id="nav-buttons"></div>
+        </div>
+    </header>
+
+    <!-- 搜索区 -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索讲座、比赛、晚会...">
+                <select id="typeFilter" class="filter-select">
+                    <option value="all">所有类型</option>
+                    <option value="学术讲座">学术讲座</option>
+                    <option value="文体活动">文体活动</option>
+                    <option value="社团招募">社团招募</option>
+                    <option value="志愿公益">志愿公益</option>
+                </select>
+                <button class="search-btn" onclick="filterItems()">搜索活动</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 活动列表 -->
+    <main class="container">
+        <div id="itemList" class="event-list">
+            <!-- JS 动态生成 -->
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 校园活动通。 Keep Moving.</p>
+    </footer>
+
+    <script src="../auth.js"></script>
+    
+    <!-- 逻辑脚本 -->
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    // 注意：通常还需要 auth 模块来获取当前用户
+    import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    const firebaseConfig = { /* 你的配置 */ };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(); // 初始化认证
+    const itemListElement = document.getElementById('itemList');
+    let allItems = [];
+    let currentUser = null;
+
+    // 监听用户登录状态
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            currentUser = user;
+            // 用户登录后，重新渲染以更新按钮状态
+            renderItems(allItems);
+        } else {
+            currentUser = null;
+        }
+    });
+
+    // 读取活动数据
+    const itemsRef = ref(db, 'items');
+    onValue(itemsRef, (snapshot) => {
+        const data = snapshot.val();
+        allItems = [];
+        if (data) {
+            Object.keys(data).forEach(key => {
+                // 假设数据结构中包含 registrants 字段
+                allItems.push({ id: key, ...data[key] }); 
+            });
+        }
+        allItems.sort((a, b) => b.timestamp - a.timestamp);
+        renderItems(allItems);
+    });
+
+    // 渲染函数 (已修改：增加了报名按钮)
+    function renderItems(data) {
+        itemListElement.innerHTML = '';
+        if (!data || data.length === 0) {
+            itemListElement.innerHTML = '<p style="text-align:center; color:#999;">近期暂无活动，快去发布一个吧！</p>';
+            return;
+        }
+
+        data.forEach(item => {
+            const eventDate = new Date(item.date);
+            const month = eventDate.getMonth() + 1;
+            const day = eventDate.getDate();
+            const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][eventDate.getDay];
+
+            // 判断当前用户是否已报名此活动
+            const isRegistered = currentUser && item.registrants && item.registrants.includes(currentUser.uid);
+            
+            // 根据登录状态和报名状态显示不同的按钮文本和样式
+            let btnText = "请登录";
+            let btnClass = "btn-contact disabled";
+            let btnAction = "alert('请先登录');";
+
+            if (currentUser) {
+                btnText = isRegistered ? "已报名 ✅" : "立即报名";
+                btnClass = isRegistered ? "btn-contact btn-registered" : "btn-contact";
+                btnAction = isRegistered ? 
+                    `unregisterFromEvent('${item.id}');` : 
+                    `registerForEvent('${item.id}');`;
+            }
+
+            const cardHTML = `
+                <div class="event-card">
+                    <!-- 左侧日期代码保持不变... -->
+                    <div class="card-body">
+                        <!-- 标题和描述保持不变... -->
+                        <h3 class="card-title">${item.title}</h3>
+                        <div class="card-info">📍 ${item.location}</div>
+                        <div class="card-info">⏰ ${item.time || '具体时间待定'}</div>
+                        <p class="card-desc">${item.desc}</p>
+                        
+                        <!-- 修改底部：使用动态按钮 -->
+                        <div class="card-footer">
+                            <span style="color:#999; font-size:0.85rem;">
+                                报名人数: <span id="count-${item.id}">${item.registerCount || 0}</span>
+                            </span>
+                            <button class="${btnClass}" onclick="${btnAction}" ${currentUser ? '' : 'disabled'}>
+                                ${btnText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            itemListElement.innerHTML += cardHTML;
+        });
+    }
+
+    // 报名函数
+    async function registerForEvent(itemId) {
+        if (!currentUser) return;
+
+        const itemRef = ref(db, `items/${itemId}`);
+        try {
+            // 这里简化处理：假设我们有一个 registerCount 字段和 registrants 列表
+            // 实际开发中可能需要事务处理 (transaction) 来防止并发冲突
+            const snapshot = await get(itemRef);
+            const data = snapshot.val();
+            const newCount = (data.registerCount || 0) + 1;
+            const newRegistrants = [...(data.registrants || []), currentUser.uid];
+
+            await update(itemRef, {
+                registerCount: newCount,
+                registrants: newRegistrants
+            });
+
+            // 本地更新（或者重新加载数据）
+            document.getElementById(`count-${itemId}`).textContent = newCount;
+        } catch (error) {
+            console.error("报名失败:", error);
+            alert("报名失败，请重试");
+        }
+    }
+
+    // 取消报名函数
+    async function unregisterFromEvent(itemId) {
+        if (!currentUser) return;
+
+        const itemRef = ref(db, `items/${itemId}`);
+        try {
+            const snapshot = await get(itemRef);
+            const data = snapshot.val();
+            const currentCount = data.registerCount || 0;
+            const registrantsList = data.registrants || [];
+            const newRegistrants = registrantsList.filter(uid => uid !== currentUser.uid);
+            const newCount = Math.max(0, currentCount - 1);
+
+            await update(itemRef, {
+                registerCount: newCount,
+                registrants: newRegistrants.length > 0 ? newRegistrants : null // 如果为空则删除该字段
+            });
+
+            document.getElementById(`count-${itemId}`).textContent = newCount;
+        } catch (error) {
+            console.error("取消报名失败:", error);
+        }
+    }
+
+    // 搜索逻辑保持不变...
+    window.filterItems = function() { /* ... */ }
+</script>
+
+<style>
+    /* 新增的 CSS 样式 */
+    .btn-registered {
+        background-color: #28a745 !important; /* 绿色背景 */
+        cursor: not-allowed;
+    }
+    .disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+</body>
+</html>

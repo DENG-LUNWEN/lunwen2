@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布闲置 - 校园二手集市</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9f9f9; color: #333; }
+        
+        header { background-color: #ff6b6b; color: white; padding: 1rem 0; }
+        .container { width: 90%; max-width: 800px; margin: 0 auto; }
+        .nav-flex { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .btn { padding: 10px 20px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; text-decoration: none; display: inline-block; }
+        .btn-back { background-color: rgba(255,255,255,0.2); color: white; }
+        
+        .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 30px auto; }
+        .form-title { text-align: center; margin-bottom: 25px; color: #ff6b6b; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; }
+        .form-control:focus { border-color: #ff6b6b; outline: none; }
+        
+        .price-input { color: #ff6b6b; font-weight: bold; font-size: 1.2rem; }
+        
+        .btn-submit { width: 100%; background-color: #ff6b6b; color: white; font-size: 1.1rem; padding: 15px; }
+        .btn-submit:hover { background-color: #ee5253; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-flex">
+            <div class="logo">🏫 校园二手集市</div>
+            <a href="market.html" class="btn btn-back">← 返回首页</a>
+            <div id="nav-buttons"></div>
+        </div>
+
+    </header>
+
+    <main class="container">
+        <div class="form-container">
+            <h2 class="form-title">发布闲置物品</h2>
+            <form id="publishForm">
+                <!-- 物品名称 -->
+                <div class="form-group">
+                    <label for="title">物品名称 *</label>
+                    <input type="text" id="title" class="form-control" placeholder="例如：九成新 Kindle" required>
+                </div>
+
+                <!-- 价格与分类 -->
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="price">价格 (元) *</label>
+                        <input type="number" id="price" class="form-control price-input" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="category">分类 *</label>
+                        <select id="category" class="form-control" required>
+                            <option value="书籍教材">书籍教材</option>
+                            <option value="数码电子">数码电子</option>
+                            <option value="生活杂物">生活杂物</option>
+                            <option value="交通工具">交通工具</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 交易方式 -->
+                <div class="form-group">
+                    <label>交易方式</label>
+                    <div style="display: flex; gap: 20px;">
+                        <label><input type="radio" name="delivery" value="面交" checked> 仅限面交</label>
+                        <label><input type="radio" name="delivery" value="邮寄"> 支持邮寄</label>
+                    </div>
+                </div>
+
+                <!-- 详细描述 -->
+                <div class="form-group">
+                    <label for="desc">物品描述 *</label>
+                    <textarea id="desc" class="form-control" rows="4" placeholder="新旧程度？有什么瑕疵？原价多少？" required></textarea>
+                </div>
+
+                <!-- 联系方式 -->
+                <div class="form-group">
+                    <label for="contact">微信号 / 手机号 *</label>
+                    <input type="text" id="contact" class="form-control" placeholder="方便买家联系你" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">宿舍/位置 (选填)</label>
+                    <input type="text" id="location" class="form-control" placeholder="例如：南校区 3号楼">
+                </div>
+
+                <button type="submit" class="btn btn-submit">发布商品</button>
+            </form>
+        </div>
+    </main>
+    <script src="../auth.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // ⚠️ 请在此处填入你的 Firebase 配置信息
+        const firebaseConfig = {
+            apiKey: "你的API_KEY",
+            authDomain: "你的项目.firebaseapp.com",
+            databaseURL: "你的项目-default-rtdb.firebaseio.com",
+            projectId: "你的项目ID",
+            storageBucket: "你的项目.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        document.getElementById('publishForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = {
+                title: document.getElementById('title').value,
+                price: document.getElementById('price').value,
+                category: document.getElementById('category').value,
+                delivery: document.querySelector('input[name="delivery"]:checked').value,
+                desc: document.getElementById('desc').value,
+                contact: document.getElementById('contact').value,
+                location: document.getElementById('location').value,
+                status: 'onsale', // 默认状态：在售
+                timestamp: Date.now()
+            };
+
+            push(ref(db, 'items'), formData)
+                .then(() => {
+                    alert("发布成功！");
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    alert("发布失败：" + error.message);
+                });
+        });
+    </script>
+</body>
+</html>

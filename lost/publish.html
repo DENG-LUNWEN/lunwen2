@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布信息 - 校园失物招领</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; }
+        
+        header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 1rem 0; }
+        .container { width: 90%; max-width: 800px; margin: 0 auto; }
+        .nav-flex { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .btn { padding: 10px 20px; border-radius: 20px; cursor: pointer; border: none; font-weight: bold; text-decoration: none; display: inline-block; }
+        .btn-back { background-color: rgba(255,255,255,0.2); color: white; }
+        
+        .form-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 30px auto; }
+        .form-title { text-align: center; margin-bottom: 25px; color: #4facfe; font-size: 1.8rem; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .form-control:focus { border-color: #4facfe; outline: none; box-shadow: 0 0 5px rgba(79, 172, 254, 0.2); }
+        
+        .radio-group { display: flex; gap: 20px; }
+        .radio-label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: bold; color: #555; }
+        
+        /* 图片上传样式 */
+        .upload-box { display: flex; align-items: center; gap: 10px; }
+        .upload-btn { background: #f1f2f6; color: #2c3e50; padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px dashed #ccc; transition: 0.3s; }
+        .upload-btn:hover { background: #dfe4ea; border-color: #4facfe; color: #4facfe; }
+        #imagePreview { margin-top: 15px; max-width: 100%; }
+        #imagePreview img { max-height: 200px; border-radius: 8px; border: 1px solid #ddd; }
+
+        .btn-submit { width: 100%; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; font-size: 1.1rem; padding: 15px; border-radius: 8px; }
+        .btn-submit:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-flex">
+            <div class="logo">💙 校园失物招领</div>
+            <a href="lost.html" class="btn btn-back">← 返回首页</a>
+            <div id="nav-buttons"></div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="form-container">
+            <h2 class="form-title">发布失物/招领信息</h2>
+            <form id="publishForm">
+                <!-- 类型选择 -->
+                <div class="form-group">
+                    <label>信息类型</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="type" value="lost" checked> 我丢了东西 (遗失)
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="type" value="found"> 我捡到了东西 (招领)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 物品名称 -->
+                <div class="form-group">
+                    <label for="title">物品名称 *</label>
+                    <input type="text" id="title" class="form-control" placeholder="例如：黑色钱包、校园一卡通" required>
+                </div>
+
+                <!-- 时间地点 -->
+                <div class="form-group">
+                    <label for="location">地点 *</label>
+                    <input type="text" id="location" class="form-control" placeholder="例如：图书馆二楼自习室" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="date">日期 *</label>
+                    <input type="date" id="date" class="form-control" required>
+                </div>
+
+                <!-- 图片上传 -->
+                <div class="form-group">
+                    <label>物品照片 (选填)</label>
+                    <div class="upload-box">
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <label for="fileInput" class="upload-btn">📷 选择图片</label>
+                        <span id="fileName" style="color: #666; font-size: 0.9rem;">未选择</span>
+                    </div>
+                    <div id="imagePreview"></div>
+                </div>
+
+                <!-- 详细描述 -->
+                <div class="form-group">
+                    <label for="desc">详细描述 *</label>
+                    <textarea id="desc" class="form-control" rows="4" placeholder="请描述物品的特征、品牌、颜色等细节..." required></textarea>
+                </div>
+
+                <!-- 联系方式 -->
+                <div class="form-group">
+                    <label for="contactName">联系人</label>
+                    <input type="text" id="contactName" class="form-control" placeholder="你的称呼">
+                </div>
+                <div class="form-group">
+                    <label for="contact">联系电话/微信 *</label>
+                    <input type="text" id="contact" class="form-control" placeholder="方便对方联系你" required>
+                </div>
+
+                <button type="submit" class="btn btn-submit">发布信息</button>
+            </form>
+        </div>
+    </main>
+    <script src="../auth.js"></script>
+        <script type="module">
+        // 1. 引入 Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        import { getStorage, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+        // 2. 你的 Firebase 配置 (记得替换成你自己的)
+        const firebaseConfig = {
+            apiKey: "你的API_KEY",
+            authDomain: "你的项目.firebaseapp.com",
+            databaseURL: "你的项目-default-rtdb.firebaseio.com",
+            projectId: "你的项目ID",
+            storageBucket: "你的项目.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        // 3. 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const storage = getStorage(app);
+
+        // 4. 设置日期默认值为今天
+        document.getElementById('date').valueAsDate = new Date();
+
+        // --- 图片预览逻辑 ---
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const imagePreview = document.getElementById('imagePreview');
+        let selectedFile = null;
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFile = file;
+                fileName.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.innerHTML = `<img src="${e.target.result}" alt="预览">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- 表单提交逻辑 ---
+        document.getElementById('publishForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); // 阻止默认提交
+            
+            const submitBtn = document.querySelector('.btn-submit');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = "正在发布...";
+            submitBtn.disabled = true;
+
+            try {
+                let imageUrl = '';
+
+                // 如果有选择图片，先上传图片到 Firebase Storage
+                if (selectedFile) {
+                    // 创建一个唯一的文件名：时间戳_原文件名
+                    const storageRef = ref(storage, 'lost_found_images/' + Date.now() + '_' + selectedFile.name);
+                    
+                    // 执行上传
+                    await uploadBytes(storageRef, selectedFile);
+                    
+                    // 获取图片的下载链接
+                    imageUrl = await getDownloadURL(storageRef);
+                    console.log('图片上传成功，链接:', imageUrl);
+                }
+
+                // 准备要存入数据库的文字信息
+                const formData = {
+                    type: document.querySelector('input[name="type"]:checked').value,
+                    title: document.getElementById('title').value,
+                    location: document.getElementById('location').value,
+                    date: document.getElementById('date').value,
+                    desc: document.getElementById('desc').value,
+                    contact: document.getElementById('contact').value,
+                    contactName: document.getElementById('contactName').value,
+                    image: imageUrl, // 如果有图片，这里就是图片链接；如果没有，就是空字符串
+                    timestamp: Date.now()
+                };
+
+                // 将数据推送到 Realtime Database
+                await push(ref(db, 'items'), formData);
+
+                alert("发布成功！");
+                window.location.href = 'index.html';
+
+            } catch (error) {
+                console.error("发布失败:", error);
+                alert("发布失败: " + error.message);
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>

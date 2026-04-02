@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布活动 - 校园活动通</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; }
+        
+        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 0; }
+        .container { width: 90%; max-width: 800px; margin: 0 auto; }
+        .nav-flex { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .btn { padding: 10px 20px; border-radius: 20px; cursor: pointer; border: none; font-weight: bold; text-decoration: none; display: inline-block; }
+        .btn-back { background-color: rgba(255,255,255,0.2); color: white; }
+        
+        .form-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 30px auto; }
+        .form-title { text-align: center; margin-bottom: 25px; color: #764ba2; font-size: 1.8rem; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .form-control:focus { border-color: #764ba2; outline: none; box-shadow: 0 0 5px rgba(118, 75, 162, 0.2); }
+        
+        .row { display: flex; gap: 20px; }
+        .col { flex: 1; }
+        
+        .btn-submit { width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1.1rem; padding: 15px; border-radius: 8px; }
+        .btn-submit:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-flex">
+            <div class="logo">🚀 校园活动通</div>
+            <a href="event.html" class="btn btn-back">← 返回首页</a>
+            <div id="nav-buttons"></div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="form-container">
+            <h2 class="form-title">发起一个新活动</h2>
+            <form id="publishForm">
+                <!-- 活动名称 -->
+                <div class="form-group">
+                    <label for="title">活动名称 *</label>
+                    <input type="text" id="title" class="form-control" placeholder="例如：第十届校园十佳歌手大赛" required>
+                </div>
+
+                <!-- 分类与主办方 -->
+                <div class="row">
+                    <div class="form-group col">
+                        <label for="category">活动类型 *</label>
+                        <select id="category" class="form-control" required>
+                            <option value="学术讲座">学术讲座</option>
+                            <option value="文体活动">文体活动</option>
+                            <option value="社团招募">社团招募</option>
+                            <option value="志愿公益">志愿公益</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group col">
+                        <label for="contactName">主办方/组织者</label>
+                        <input type="text" id="contactName" class="form-control" placeholder="例如：吉他社">
+                    </div>
+                </div>
+
+                <!-- 时间地点 -->
+                <div class="form-group">
+                    <label for="location">活动地点 *</label>
+                    <input type="text" id="location" class="form-control" placeholder="例如：大学生活动中心 301室" required>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group col">
+                        <label for="date">活动日期 *</label>
+                        <input type="date" id="date" class="form-control" required>
+                    </div>
+                    <div class="form-group col">
+                        <label for="time">具体时间</label>
+                        <input type="text" id="time" class="form-control" placeholder="例如：18:30 - 20:00">
+                    </div>
+                </div>
+
+                <!-- 详细描述 -->
+                <div class="form-group">
+                    <label for="desc">活动详情 *</label>
+                    <textarea id="desc" class="form-control" rows="4" placeholder="活动流程、报名方式、是否有奖品..." required></textarea>
+                </div>
+
+                <!-- 联系方式 -->
+                <div class="form-group">
+                    <label for="contact">报名/咨询电话</label>
+                    <input type="text" id="contact" class="form-control" placeholder="负责人手机号">
+                </div>
+
+                <button type="submit" class="btn btn-submit">发布活动</button>
+            </form>
+        </div>
+    </main>
+    <script src="../auth.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // ⚠️ 请在此处填入你的 Firebase 配置信息
+        const firebaseConfig = {
+            apiKey: "你的API_KEY",
+            authDomain: "你的项目.firebaseapp.com",
+            databaseURL: "你的项目-default-rtdb.firebaseio.com",
+            projectId: "你的项目ID",
+            storageBucket: "你的项目.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 设置日期默认值为今天
+        document.getElementById('date').valueAsDate = new Date();
+
+        document.getElementById('publishForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = {
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                contactName: document.getElementById('contactName').value,
+                location: document.getElementById('location').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                desc: document.getElementById('desc').value,
+                contact: document.getElementById('contact').value,
+                timestamp: Date.now()
+            };
+
+            push(ref(db, 'items'), formData)
+                .then(() => {
+                    alert("活动发布成功！");
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    alert("发布失败：" + error.message);
+                });
+        });
+    </script>
+</body>
+</html>
